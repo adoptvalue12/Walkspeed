@@ -1,286 +1,382 @@
+--// JDI Fly + Noclip + TP + ESP + Tracers + Infinite Jump + Rejoin + Version GUI
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = Players.LocalPlayer
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- VARIABLES
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+local flying, noclip = false, false
+local flySpeed = 50
+local minSpeed, maxSpeed = 10, 1000
+local espEnabled, tracersEnabled = false, false
+local infiniteJumpEnabled = false -- START OFF
+local espBoxes, espLabels, tracerParts = {}, {}, {}
 
-local speedValue = 16
-local jumpValue = 50
-local flyEnabled = false
-local minSpeed, maxSpeed = 1, 100
-local minJump, maxJump = 10, 300
-
-local oldGui = playerGui:FindFirstChild("SpeedGUI")
-if oldGui then oldGui:Destroy() end
-
-local gui = Instance.new("ScreenGui", playerGui)
-gui.Name = "SpeedGUI"
-gui.ResetOnSpawn = false
-
-local function fadeCreditSequence()
-    local credit = Instance.new("TextLabel", gui)
-    credit.Size = UDim2.new(0, 350, 0, 40)
-    credit.Position = UDim2.new(0.5, -175, 0, 10)
-    credit.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    credit.BackgroundTransparency = 0.2
-    credit.TextColor3 = Color3.fromRGB(255, 215, 0)
-    credit.Font = Enum.Font.GothamBold
-    credit.TextScaled = true
-    Instance.new("UICorner", credit).CornerRadius = UDim.new(0, 10)
-
-    credit.Text = "Hey! This script is made by MNDEV!"
-    task.wait(10)
-    for i = 1, 20 do
-        credit.TextTransparency = i / 20
-        credit.BackgroundTransparency = 0.2 + (i / 20)
-        task.wait(0.05)
-    end
-
-    credit.TextTransparency = 0
-    credit.BackgroundTransparency = 0.2
-    credit.Text = "If you lost the GUI just re‑execute the script!"
-    task.wait(10)
-    for i = 1, 20 do
-        credit.TextTransparency = i / 20
-        credit.BackgroundTransparency = 0.2 + (i / 20)
-        task.wait(0.05)
-    end
-
-    credit:Destroy()
+-- HANDLE CHARACTER RESPAWN
+local function onCharacterAdded(char)
+    Character = char
+    HRP = char:WaitForChild("HumanoidRootPart")
 end
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+if LocalPlayer.Character then onCharacterAdded(LocalPlayer.Character) end
 
-task.spawn(fadeCreditSequence)
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JDIGUI"
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame", gui)
-frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 300, 0, 220)
-frame.Position = UDim2.new(0, 20, 0, 20)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BackgroundTransparency = 0.25
+-- MAIN FRAME
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,220,0,460)
+frame.Position = UDim2.new(0.5,-110,0.5,-230)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", frame).Color = Color3.fromRGB(255, 215, 0)
+frame.Parent = gui
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Position = UDim2.new(0, 0, 0, 0)
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0,12)
+frameCorner.Parent = frame
+
+-- TITLE BAR
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1,0,0,30)
+titleBar.BackgroundColor3 = Color3.fromRGB(45,45,45)
+titleBar.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0,12)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-80,1,0)
+title.Position = UDim2.new(0,10,0,0)
 title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(255, 215, 0)
-title.Text = "Speed Modification 🚀"
+title.Text = "JDI GUI"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
 
-local valueLabel = Instance.new("TextLabel", frame)
-valueLabel.Size = UDim2.new(1, -20, 0, 30)
-valueLabel.Position = UDim2.new(0, 10, 0, 40)
-valueLabel.BackgroundTransparency = 1
-valueLabel.Font = Enum.Font.Gotham
-valueLabel.TextSize = 18
-valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-valueLabel.Text = "Speed: " .. speedValue
+-- MINIMIZE & CLOSE
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0,20,0,20)
+minimizeBtn.Position = UDim2.new(1,-60,0,5)
+minimizeBtn.Text = "-"
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 18
+minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+minimizeBtn.Parent = titleBar
 
-local minus = Instance.new("TextButton", frame)
-minus.Size = UDim2.new(0, 50, 0, 35)
-minus.Position = UDim2.new(0, 10, 0, 80)
-minus.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-minus.Font = Enum.Font.GothamBold
-minus.TextSize = 26
-minus.TextColor3 = Color3.new(1, 1, 1)
-minus.Text = "-"
-Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,20,0,20)
+closeBtn.Position = UDim2.new(1,-35,0,5)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
+closeBtn.Parent = titleBar
 
-local plus = Instance.new("TextButton", frame)
-plus.Size = UDim2.new(0, 50, 0, 35)
-plus.Position = UDim2.new(0, 240, 0, 80)
-plus.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-plus.Font = Enum.Font.GothamBold
-plus.TextSize = 26
-plus.TextColor3 = Color3.new(1, 1, 1)
-plus.Text = "+"
-Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
+-- SPEED LABEL
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1,-20,0,25)
+speedLabel.Position = UDim2.new(0,10,0,40)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Speed: "..flySpeed
+speedLabel.TextColor3 = Color3.fromRGB(200,200,200)
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.TextSize = 16
+speedLabel.Parent = frame
 
-local flyToggle = Instance.new("TextButton", frame)
-flyToggle.Size = UDim2.new(0, 120, 0, 35)
-flyToggle.Position = UDim2.new(0.5, -60, 0, 80)
-flyToggle.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-flyToggle.Font = Enum.Font.GothamBold
-flyToggle.TextSize = 16
-flyToggle.TextColor3 = Color3.new(1, 1, 1)
-flyToggle.Text = "Toggle Flying"
-flyToggle.Visible = false
-Instance.new("UICorner", flyToggle).CornerRadius = UDim.new(0, 6)
-
-local function createTabButton(name, posX, label)
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(0.33, -6, 0, 30)
-    btn.Position = UDim2.new(posX, 0, 1, -40)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.fromRGB(255, 215, 0)
-    btn.Text = label
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    return btn
+-- CLICK SOUND FUNCTION
+local function addClickSound(btn)
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://452267918"
+	sound.Volume = 1
+	sound.Parent = btn
+	btn.MouseButton1Click:Connect(function()
+		sound:Play()
+	end)
 end
 
-local speedTab = createTabButton("Speed", 0, "Speed Tab 🚀")
-local jumpTab = createTabButton("Jump", 0.33, "Jump Tab 🦘")
-local flyTab = createTabButton("Fly", 0.66, "Fly Tab 🕊️")
+-- BUTTON CREATOR
+local function createButton(text,y)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1,-20,0,30)
+	btn.Position = UDim2.new(0,10,0,y)
+	btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	btn.Text = text
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Font = Enum.Font.SourceSansBold
+	btn.TextSize = 16
+	btn.Parent = frame
 
-local mode = "Speed"
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,8)
+	corner.Parent = btn
 
-local function updateUI()
-    if mode == "Speed" then
-        title.Text = "Speed Modification 🚀"
-        minus.Visible = true
-        plus.Visible = true
-        flyToggle.Visible = false
-        valueLabel.Text = "Speed: " .. speedValue
-    elseif mode == "Jump" then
-        title.Text = "Jump Power Modification 🦘"
-        minus.Visible = true
-        plus.Visible = true
-        flyToggle.Visible = false
-        valueLabel.Text = "Jump Power: " .. jumpValue
-    else
-        title.Text = "Fly Mode 🕊️"
-        minus.Visible = false
-        plus.Visible = false
-        flyToggle.Visible = true
-        valueLabel.Text = flyEnabled and "Flying: ON" or "Flying: OFF"
-    end
+	addClickSound(btn)
+	return btn
 end
 
-minus.MouseButton1Click:Connect(function()
-    if mode == "Speed" and speedValue > minSpeed then
-        speedValue -= 1
-    elseif mode == "Jump" and jumpValue > minJump then
-        jumpValue -= 5
-    end
-    updateUI()
+-- CREATE BUTTONS
+local flyButton = createButton("Fly: OFF",70)
+local plusButton = createButton("Speed +",110)
+local minusButton = createButton("Speed -",150)
+local noclipButton = createButton("Noclip: OFF",190)
+local espButton = createButton("ESP: OFF",230)
+local tracersButton = createButton("Tracers: OFF",270)
+local infJumpButton = createButton("Infinite Jump: OFF",310)
+local rejoinButton = createButton("Rejoin Server",390)
+
+-- SUBSCRIBE & VERSION LABEL
+local subscribe = Instance.new("TextLabel")
+subscribe.Size = UDim2.new(1,-20,0,25)
+subscribe.Position = UDim2.new(0,10,0,350)
+subscribe.BackgroundTransparency = 1
+subscribe.Text = "Subscribe to @kidonvrrl on YT!"
+subscribe.TextColor3 = Color3.fromRGB(255,255,255)
+subscribe.Font = Enum.Font.SourceSansBold
+subscribe.TextSize = 16
+subscribe.TextXAlignment = Enum.TextXAlignment.Center
+subscribe.Parent = frame
+
+local version = Instance.new("TextLabel")
+version.Size = UDim2.new(1,-20,0,20)
+version.Position = UDim2.new(0,10,0,425)
+version.BackgroundTransparency = 1
+version.Text = "JDI GUI v1.5 | by kidonvrrl"
+version.TextColor3 = Color3.fromRGB(200,200,200)
+version.Font = Enum.Font.SourceSans
+version.TextSize = 14
+version.TextXAlignment = Enum.TextXAlignment.Center
+version.Parent = frame
+
+-- MINI BUTTON
+local miniButton = Instance.new("TextButton")
+miniButton.Size = UDim2.new(0,50,0,50)
+miniButton.Position = frame.Position
+miniButton.Text = "JDI"
+miniButton.Font = Enum.Font.SourceSansBold
+miniButton.TextSize = 16
+miniButton.TextColor3 = Color3.fromRGB(255,255,255)
+miniButton.BackgroundColor3 = Color3.fromRGB(45,45,45)
+miniButton.Visible = false
+miniButton.Active = true
+miniButton.Parent = gui
+
+local miniCorner = Instance.new("UICorner")
+miniCorner.CornerRadius = UDim.new(0,12)
+miniCorner.Parent = miniButton
+
+-- MINI DRAG
+local dragging = false
+local offset = Vector2.zero
+miniButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		offset = UserInputService:GetMouseLocation() - miniButton.AbsolutePosition
+	end
 end)
-
-plus.MouseButton1Click:Connect(function()
-    if mode == "Speed" and speedValue < maxSpeed then
-        speedValue += 1
-    elseif mode == "Jump" and jumpValue < maxJump then
-        jumpValue += 5
-    end
-    updateUI()
+miniButton.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
 end)
-
-speedTab.MouseButton1Click:Connect(function()
-    mode = "Speed"
-    updateUI()
-end)
-
-jumpTab.MouseButton1Click:Connect(function()
-    mode = "Jump"
-    updateUI()
-end)
-
-flyTab.MouseButton1Click:Connect(function()
-    mode = "Fly"
-    updateUI()
-end)
-
-local bodyVel, bodyGyro
-
-local function startFly(char)
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChild("Humanoid")
-    if not hrp or not humanoid then return end
-    humanoid.PlatformStand = true
-
-    bodyVel = Instance.new("BodyVelocity")
-    bodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    bodyVel.Velocity = Vector3.new(0, 0, 0)
-    bodyVel.Parent = hrp
-
-    bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    bodyGyro.CFrame = hrp.CFrame
-    bodyGyro.Parent = hrp
-end
-
-local function stopFly(char)
-    if not char then return end
-    local humanoid = char:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.PlatformStand = false
-    end
-    if bodyVel then
-        bodyVel:Destroy()
-        bodyVel = nil
-    end
-    if bodyGyro then
-        bodyGyro:Destroy()
-        bodyGyro = nil
-    end
-end
-
-flyToggle.MouseButton1Click:Connect(function()
-    flyEnabled = not flyEnabled
-    updateUI()
-    if flyEnabled then
-        startFly(player.Character)
-    else
-        stopFly(player.Character)
-    end
-end)
-
-local function getMoveDirection(char)
-    if char and char:FindFirstChild("Humanoid") then
-        return char.Humanoid.MoveDirection
-    end
-    return Vector3.new(0,0,0)
-end
-
 RunService.RenderStepped:Connect(function()
-    if flyEnabled and mode == "Fly" then
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local cam = workspace.CurrentCamera
-            
-            -- flySpeed syncs with speedValue
-            local flySpeed = speedValue
-            
-            -- Get normalized move direction (from joystick on mobile too)
-            local moveDir = getMoveDirection(char)
-            if moveDir.Magnitude > 0 then
-                -- Correct the direction by rotating moveDir to camera space
-                local camYRot = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z).Unit
-                local correctedDir = (cam.CFrame - cam.CFrame.Position):VectorToWorldSpace(moveDir)
-                
-                -- Apply velocity in corrected direction multiplied by speed
-                bodyVel.Velocity = correctedDir.Unit * flySpeed
-            else
-                -- No input, no movement but keep floating
-                bodyVel.Velocity = Vector3.new(0, 0, 0)
-            end
-            
-            -- Keep the bodyGyro to face camera direction
-            bodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.CFrame.LookVector)
-        end
-    end
+	if dragging then
+		local mouse = UserInputService:GetMouseLocation()
+		miniButton.Position = UDim2.new(0, mouse.X - offset.X, 0, mouse.Y - offset.Y)
+	end
 end)
 
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if char and char:FindFirstChild("Humanoid") then
-        local humanoid = char.Humanoid
-        humanoid.WalkSpeed = speedValue
-        humanoid.JumpPower = jumpValue
-        if flyEnabled and mode ~= "Fly" then
-            flyEnabled = false
-            stopFly(char)
-            updateUI()
-        end
-    end
+-- FLY FUNCTIONS
+local bodyVelocity, bodyGyro
+local function startFly()
+	flying = true
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)
+	bodyVelocity.Parent = HRP
+
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
+	bodyGyro.P = 1e6
+	bodyGyro.Parent = HRP
+end
+local function stopFly()
+	flying = false
+	if bodyVelocity then bodyVelocity:Destroy() end
+	if bodyGyro then bodyGyro:Destroy() end
+end
+
+-- BUTTON LOGIC
+flyButton.MouseButton1Click:Connect(function()
+	if flying then stopFly() flyButton.Text="Fly: OFF" else startFly() flyButton.Text="Fly: ON" end
+end)
+plusButton.MouseButton1Click:Connect(function()
+	flySpeed = math.clamp(flySpeed+10,minSpeed,maxSpeed)
+	speedLabel.Text="Speed: "..flySpeed
+end)
+minusButton.MouseButton1Click:Connect(function()
+	flySpeed = math.clamp(flySpeed-10,minSpeed,maxSpeed)
+	speedLabel.Text="Speed: "..flySpeed
+end)
+noclipButton.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	noclipButton.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+end)
+espButton.MouseButton1Click:Connect(function()
+	espEnabled = not espEnabled
+	espButton.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+	if not espEnabled then
+		for _,v in pairs(espBoxes) do v:Destroy() end
+		for _,v in pairs(espLabels) do v:Destroy() end
+		espBoxes, espLabels = {}, {}
+	end
+end)
+tracersButton.MouseButton1Click:Connect(function()
+	tracersEnabled = not tracersEnabled
+	tracersButton.Text = tracersEnabled and "Tracers: ON" or "Tracers: OFF"
+	if not tracersEnabled then
+		for _,v in pairs(tracerParts) do v:Destroy() end
+		tracerParts = {}
+	end
+end)
+infJumpButton.MouseButton1Click:Connect(function()
+	infiniteJumpEnabled = not infiniteJumpEnabled
+	infJumpButton.Text = infiniteJumpEnabled and "Infinite Jump: ON" or "Infinite Jump: OFF"
+end)
+rejoinButton.MouseButton1Click:Connect(function()
+	local placeId = game.PlaceId
+	local jobId = game.JobId
+	TeleportService:TeleportToPlaceInstance(placeId, jobId, LocalPlayer)
 end)
 
-updateUI()
+-- MINIMIZE & CLOSE
+minimizeBtn.MouseButton1Click:Connect(function()
+	miniButton.Position = frame.Position
+	frame.Visible = false
+	miniButton.Visible = true
+end)
+miniButton.MouseButton1Click:Connect(function()
+	frame.Position = miniButton.Position
+	frame.Visible = true
+	miniButton.Visible = false
+end)
+closeBtn.MouseButton1Click:Connect(function()
+	stopFly()
+	noclip = false
+	gui:Destroy()
+end)
+
+-- FLY MOVEMENT
+RunService.RenderStepped:Connect(function()
+	if flying and bodyVelocity and bodyGyro then
+		local cam = Workspace.CurrentCamera
+		local dir = Vector3.zero
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir -= Vector3.new(0,1,0) end
+		bodyVelocity.Velocity = dir.Magnitude > 0 and dir.Unit*flySpeed or Vector3.zero
+		bodyGyro.CFrame = CFrame.new(HRP.Position, HRP.Position + Workspace.CurrentCamera.CFrame.LookVector)
+	end
+end)
+
+-- INFINITE JUMP
+UserInputService.JumpRequest:Connect(function()
+	if infiniteJumpEnabled and Character:FindFirstChildOfClass("Humanoid") then
+		local humanoid = Character:FindFirstChildOfClass("Humanoid")
+		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+-- NOCLIP
+RunService.Stepped:Connect(function()
+	if noclip then
+		for _,p in pairs(Character:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide=false end
+		end
+	end
+end)
+
+-- ESP & TRACERS (continuous)
+RunService.RenderStepped:Connect(function()
+	for _,plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = plr.Character.HumanoidRootPart
+			local dist = math.floor((HRP.Position-hrp.Position).Magnitude)
+
+			-- ESP
+			if espEnabled then
+				if not espBoxes[plr] then
+					local box = Instance.new("BoxHandleAdornment")
+					box.Adornee = plr.Character
+					box.Size = Vector3.new(3,6,2)
+					box.Color = BrickColor.new("Bright red")
+					box.AlwaysOnTop = true
+					box.ZIndex = 10
+					box.Parent = Workspace
+					espBoxes[plr] = box
+				end
+				if not espLabels[plr] then
+					local guiBill = Instance.new("BillboardGui")
+					guiBill.Size = UDim2.new(0,350,0,40)
+					guiBill.StudsOffset = Vector3.new(0,5,0)
+					guiBill.AlwaysOnTop = true
+					guiBill.Adornee = hrp
+					local txt = Instance.new("TextLabel")
+					txt.Size = UDim2.new(1,0,1,0)
+					txt.BackgroundTransparency = 1
+					txt.TextColor3 = Color3.fromRGB(255,0,0)
+					txt.Font = Enum.Font.SourceSansBold
+					txt.TextSize = 26
+					txt.TextXAlignment = Enum.TextXAlignment.Center
+					txt.TextYAlignment = Enum.TextYAlignment.Center
+					txt.Parent = guiBill
+					guiBill.Parent = hrp
+					espLabels[plr] = txt
+				end
+				espLabels[plr].Text = "@"..plr.Name.." | "..plr.DisplayName.." | "..dist.." studs"
+			elseif espLabels[plr] then
+				espLabels[plr].Parent:Destroy()
+				espLabels[plr] = nil
+			end
+
+			-- TRACERS
+			if tracersEnabled then
+				if not tracerParts[plr] then
+					local part = Instance.new("Part")
+					part.Anchored = true
+					part.CanCollide = false
+					part.Transparency = 0.5
+					part.Material = Enum.Material.Neon
+					part.Color = Color3.fromRGB(255,0,0)
+					part.Size = Vector3.new(0.1,0.1,0.1)
+					part.Parent = Workspace
+					tracerParts[plr] = part
+				end
+				local startPos = HRP.Position
+				local endPos = hrp.Position
+				local dist = (endPos-startPos).Magnitude
+				local part = tracerParts[plr]
+				part.Size = Vector3.new(0.1,0.1,dist)
+				part.CFrame = CFrame.new(startPos,endPos)*CFrame.new(0,0,-dist/2)
+			elseif tracerParts[plr] then
+				tracerParts[plr]:Destroy()
+				tracerParts[plr] = nil
+			end
+		end
+	end
+end)

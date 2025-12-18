@@ -1,154 +1,286 @@
--- made by halil
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local title = Instance.new("TextLabel")
-local Frame_2 = Instance.new("Frame")
-local SelfChams = Instance.new("TextButton")
-local Speedhack = Instance.new("TextButton")
-local Xray = Instance.new("TextButton")
-local JumpHeight = Instance.new("TextButton")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
---Properties:
+local speedValue = 16
+local jumpValue = 50
+local flyEnabled = false
+local minSpeed, maxSpeed = 1, 100
+local minJump, maxJump = 10, 300
 
-ScreenGui.Parent = game.CoreGui
+local oldGui = playerGui:FindFirstChild("SpeedGUI")
+if oldGui then oldGui:Destroy() end
 
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Frame.Position = UDim2.new(0.0943861827, 0, 0.52638036, 0)
-Frame.Size = UDim2.new(0, 479, 0, 247)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Visible = true
+local gui = Instance.new("ScreenGui", playerGui)
+gui.Name = "SpeedGUI"
+gui.ResetOnSpawn = false
 
-title.Name = "title"
-title.Parent = Frame
-title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-title.Size = UDim2.new(0, 479, 0, 50)
-title.Font = Enum.Font.SourceSans
-title.Text = "simple game hack "
-title.TextColor3 = Color3.fromRGB(0, 0, 0)
-title.TextScaled = true
-title.TextSize = 50.000
-title.TextWrapped = true
+local function fadeCreditSequence()
+    local credit = Instance.new("TextLabel", gui)
+    credit.Size = UDim2.new(0, 350, 0, 40)
+    credit.Position = UDim2.new(0.5, -175, 0, 10)
+    credit.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    credit.BackgroundTransparency = 0.2
+    credit.TextColor3 = Color3.fromRGB(255, 215, 0)
+    credit.Font = Enum.Font.GothamBold
+    credit.TextScaled = true
+    Instance.new("UICorner", credit).CornerRadius = UDim.new(0, 10)
 
-Frame_2.Parent = Frame
-Frame_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Frame_2.Position = UDim2.new(0.0339425541, 0, 0.230769232, 0)
-Frame_2.Size = UDim2.new(0, 429, 0, 177)
+    credit.Text = "Hey! This script is made by MNDEV!"
+    task.wait(10)
+    for i = 1, 20 do
+        credit.TextTransparency = i / 20
+        credit.BackgroundTransparency = 0.2 + (i / 20)
+        task.wait(0.05)
+    end
 
-SelfChams.Name = "SelfChams"
-SelfChams.Parent = Frame_2
-SelfChams.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-SelfChams.Position = UDim2.new(0.0293972697, 0, 0.0564971752, 0)
-SelfChams.Size = UDim2.new(0, 200, 0, 50)
-SelfChams.Font = Enum.Font.SourceSans
-SelfChams.Text = "chams"
-SelfChams.TextColor3 = Color3.fromRGB(255, 255, 255)
-SelfChams.TextScaled = true
-SelfChams.TextSize = 14.000
-SelfChams.TextWrapped = true
-SelfChams.MouseButton1Down:connect(function()
-	function CreateSG(name,parent,face)
-		local SurfaceGui = Instance.new("SurfaceGui",parent)
-		SurfaceGui.Parent = parent
-		SurfaceGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-		SurfaceGui.Face = Enum.NormalId[face]
-		SurfaceGui.LightInfluence = 0
-		SurfaceGui.ResetOnSpawn = false
-		SurfaceGui.Name = name
-		SurfaceGui.AlwaysOnTop = true
-		local Frame = Instance.new("Frame",SurfaceGui)
-		Frame.BackgroundColor3 = Color3.fromRGB(85, 170, 255)
-		Frame.Size = UDim2.new(1,0,1,0)
-	end
+    credit.TextTransparency = 0
+    credit.BackgroundTransparency = 0.2
+    credit.Text = "If you lost the GUI just re‑execute the script!"
+    task.wait(10)
+    for i = 1, 20 do
+        credit.TextTransparency = i / 20
+        credit.BackgroundTransparency = 0.2 + (i / 20)
+        task.wait(0.05)
+    end
 
-	while wait(1) do
-		for i,v in pairs (game:GetService("Players"):GetPlayers()) do
-			if v ~= game:GetService("Players").LocalPlayer and v.Character ~= nil and v.Character:FindFirstChild("Head") and v.Character.Head:FindFirstChild("cham") == nil then
-				for i,v in pairs (v.Character:GetChildren()) do
-					if v:IsA("MeshPart") or v.Name == "Head" then
-						CreateSG("cham",v,"Back")
-						CreateSG("cham",v,"Front")
-						CreateSG("cham",v,"Left")
-						CreateSG("cham",v,"Right")
-						CreateSG("cham",v,"Right")
-						CreateSG("cham",v,"Top")
-						CreateSG("cham",v,"Bottom")
-					end
-				end
-			end
-		end
-	end
-end)
-
-
-Speedhack.Name = "Speedhack"
-Speedhack.Parent = Frame_2
-Speedhack.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-Speedhack.Position = UDim2.new(0.0293972697, 0, 0.395480245, 0)
-Speedhack.Size = UDim2.new(0, 200, 0, 50)
-Speedhack.Font = Enum.Font.SourceSans
-Speedhack.Text = "Speed "
-Speedhack.TextColor3 = Color3.fromRGB(255, 255, 255)
-Speedhack.TextScaled = true
-Speedhack.TextSize = 14.000
-Speedhack.TextWrapped = true
-Speedhack.MouseButton1Down:connect(function()
-	game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 90
-end)
-
-
-Xray.Name = "Xray"
-Xray.Parent = Frame_2
-Xray.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-Xray.Position = UDim2.new(0.518907726, 0, 0.0564971864, 0)
-Xray.Size = UDim2.new(0, 200, 0, 50)
-Xray.Font = Enum.Font.SourceSans
-Xray.Text = "Xray"
-Xray.TextColor3 = Color3.fromRGB(255, 255, 255)
-Xray.TextScaled = true
-Xray.TextSize = 14.000
-Xray.TextWrapped = true
-Xray.MouseButton1Down:connect(function()
-	for _,i in pairs(workspace:GetDescendants()) do
-		if i:IsA("BasePart") and not i.Parent:FindFirstChildOfClass('Humanoid') and not i.Parent.Parent:FindFirstChildOfClass('Humanoid') then
-			i.LocalTransparencyModifier = 0.5
-		end
-	end
-end)
-
-JumpHeight.Name = "JumpHeight"
-JumpHeight.Parent = Frame_2
-JumpHeight.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-JumpHeight.Position = UDim2.new(0.516576767, 0, 0.395480245, 0)
-JumpHeight.Size = UDim2.new(0, 200, 0, 50)
-JumpHeight.Font = Enum.Font.SourceSans
-JumpHeight.Text = "Jump Height"
-JumpHeight.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpHeight.TextScaled = true
-JumpHeight.TextSize = 14.000
-JumpHeight.TextWrapped = true
-JumpHeight.MouseButton1Down:connect(function()
-	game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
-end)
-
-
--- Scripts:
-
-local function BBAXYV_fake_script() -- Frame.LocalScript 
-	local script = Instance.new('LocalScript', Frame)
-
-	local t = 10;
-	
-	while wait() do
-	
-		local hue = tick() % t / t
-	
-		local color = Color3.fromHSV(hue,1,1)
-	
-		script.Parent.BackgroundColor3 = color
-	
-	end
+    credit:Destroy()
 end
-coroutine.wrap(BBAXYV_fake_script)()
+
+task.spawn(fadeCreditSequence)
+
+local frame = Instance.new("Frame", gui)
+frame.Name = "MainFrame"
+frame.Size = UDim2.new(0, 300, 0, 220)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.25
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", frame).Color = Color3.fromRGB(255, 215, 0)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 215, 0)
+title.Text = "Speed Modification 🚀"
+
+local valueLabel = Instance.new("TextLabel", frame)
+valueLabel.Size = UDim2.new(1, -20, 0, 30)
+valueLabel.Position = UDim2.new(0, 10, 0, 40)
+valueLabel.BackgroundTransparency = 1
+valueLabel.Font = Enum.Font.Gotham
+valueLabel.TextSize = 18
+valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+valueLabel.Text = "Speed: " .. speedValue
+
+local minus = Instance.new("TextButton", frame)
+minus.Size = UDim2.new(0, 50, 0, 35)
+minus.Position = UDim2.new(0, 10, 0, 80)
+minus.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+minus.Font = Enum.Font.GothamBold
+minus.TextSize = 26
+minus.TextColor3 = Color3.new(1, 1, 1)
+minus.Text = "-"
+Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
+
+local plus = Instance.new("TextButton", frame)
+plus.Size = UDim2.new(0, 50, 0, 35)
+plus.Position = UDim2.new(0, 240, 0, 80)
+plus.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+plus.Font = Enum.Font.GothamBold
+plus.TextSize = 26
+plus.TextColor3 = Color3.new(1, 1, 1)
+plus.Text = "+"
+Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
+
+local flyToggle = Instance.new("TextButton", frame)
+flyToggle.Size = UDim2.new(0, 120, 0, 35)
+flyToggle.Position = UDim2.new(0.5, -60, 0, 80)
+flyToggle.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+flyToggle.Font = Enum.Font.GothamBold
+flyToggle.TextSize = 16
+flyToggle.TextColor3 = Color3.new(1, 1, 1)
+flyToggle.Text = "Toggle Flying"
+flyToggle.Visible = false
+Instance.new("UICorner", flyToggle).CornerRadius = UDim.new(0, 6)
+
+local function createTabButton(name, posX, label)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.33, -6, 0, 30)
+    btn.Position = UDim2.new(posX, 0, 1, -40)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.fromRGB(255, 215, 0)
+    btn.Text = label
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+local speedTab = createTabButton("Speed", 0, "Speed Tab 🚀")
+local jumpTab = createTabButton("Jump", 0.33, "Jump Tab 🦘")
+local flyTab = createTabButton("Fly", 0.66, "Fly Tab 🕊️")
+
+local mode = "Speed"
+
+local function updateUI()
+    if mode == "Speed" then
+        title.Text = "Speed Modification 🚀"
+        minus.Visible = true
+        plus.Visible = true
+        flyToggle.Visible = false
+        valueLabel.Text = "Speed: " .. speedValue
+    elseif mode == "Jump" then
+        title.Text = "Jump Power Modification 🦘"
+        minus.Visible = true
+        plus.Visible = true
+        flyToggle.Visible = false
+        valueLabel.Text = "Jump Power: " .. jumpValue
+    else
+        title.Text = "Fly Mode 🕊️"
+        minus.Visible = false
+        plus.Visible = false
+        flyToggle.Visible = true
+        valueLabel.Text = flyEnabled and "Flying: ON" or "Flying: OFF"
+    end
+end
+
+minus.MouseButton1Click:Connect(function()
+    if mode == "Speed" and speedValue > minSpeed then
+        speedValue -= 1
+    elseif mode == "Jump" and jumpValue > minJump then
+        jumpValue -= 5
+    end
+    updateUI()
+end)
+
+plus.MouseButton1Click:Connect(function()
+    if mode == "Speed" and speedValue < maxSpeed then
+        speedValue += 1
+    elseif mode == "Jump" and jumpValue < maxJump then
+        jumpValue += 5
+    end
+    updateUI()
+end)
+
+speedTab.MouseButton1Click:Connect(function()
+    mode = "Speed"
+    updateUI()
+end)
+
+jumpTab.MouseButton1Click:Connect(function()
+    mode = "Jump"
+    updateUI()
+end)
+
+flyTab.MouseButton1Click:Connect(function()
+    mode = "Fly"
+    updateUI()
+end)
+
+local bodyVel, bodyGyro
+
+local function startFly(char)
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not hrp or not humanoid then return end
+    humanoid.PlatformStand = true
+
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVel.Velocity = Vector3.new(0, 0, 0)
+    bodyVel.Parent = hrp
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bodyGyro.CFrame = hrp.CFrame
+    bodyGyro.Parent = hrp
+end
+
+local function stopFly(char)
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = false
+    end
+    if bodyVel then
+        bodyVel:Destroy()
+        bodyVel = nil
+    end
+    if bodyGyro then
+        bodyGyro:Destroy()
+        bodyGyro = nil
+    end
+end
+
+flyToggle.MouseButton1Click:Connect(function()
+    flyEnabled = not flyEnabled
+    updateUI()
+    if flyEnabled then
+        startFly(player.Character)
+    else
+        stopFly(player.Character)
+    end
+end)
+
+local function getMoveDirection(char)
+    if char and char:FindFirstChild("Humanoid") then
+        return char.Humanoid.MoveDirection
+    end
+    return Vector3.new(0,0,0)
+end
+
+RunService.RenderStepped:Connect(function()
+    if flyEnabled and mode == "Fly" then
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local cam = workspace.CurrentCamera
+            
+            -- flySpeed syncs with speedValue
+            local flySpeed = speedValue
+            
+            -- Get normalized move direction (from joystick on mobile too)
+            local moveDir = getMoveDirection(char)
+            if moveDir.Magnitude > 0 then
+                -- Correct the direction by rotating moveDir to camera space
+                local camYRot = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z).Unit
+                local correctedDir = (cam.CFrame - cam.CFrame.Position):VectorToWorldSpace(moveDir)
+                
+                -- Apply velocity in corrected direction multiplied by speed
+                bodyVel.Velocity = correctedDir.Unit * flySpeed
+            else
+                -- No input, no movement but keep floating
+                bodyVel.Velocity = Vector3.new(0, 0, 0)
+            end
+            
+            -- Keep the bodyGyro to face camera direction
+            bodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.CFrame.LookVector)
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        local humanoid = char.Humanoid
+        humanoid.WalkSpeed = speedValue
+        humanoid.JumpPower = jumpValue
+        if flyEnabled and mode ~= "Fly" then
+            flyEnabled = false
+            stopFly(char)
+            updateUI()
+        end
+    end
+end)
+
+updateUI()
